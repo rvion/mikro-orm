@@ -325,7 +325,7 @@ export class UnitOfWork {
 
     try {
       this.working = true;
-      await this.doCommit();
+      await this.doCommit(opts);
 
       while (this.flushQueue.length) {
         await this.flushQueue.shift()!();
