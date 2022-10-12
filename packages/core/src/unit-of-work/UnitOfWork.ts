@@ -13,6 +13,10 @@ import { TransactionEventBroadcaster } from '../events';
 import { IdentityMap } from './IdentityMap';
 import type { LockOptions } from '../drivers/IDatabaseDriver';
 
+export type CommitOptions = {
+  doNotComputeChangeSets?: boolean;
+};
+
 export class UnitOfWork {
 
   /** map of references to managed entities */
@@ -308,7 +312,7 @@ export class UnitOfWork {
     }
   }
 
-  async commit(): Promise<void> {
+  async commit(opts?: CommitOptions): Promise<void> {
     if (this.working) {
       if (this.insideHooks) {
         throw ValidationError.cannotCommit();
@@ -332,12 +336,14 @@ export class UnitOfWork {
     }
   }
 
-  private async doCommit(): Promise<void> {
+  private async doCommit(opts?: CommitOptions): Promise<void> {
     const oldTx = this.em.getTransactionContext();
 
     try {
       await this.eventManager.dispatchEvent(EventType.beforeFlush, { em: this.em, uow: this });
-      this.computeChangeSets();
+      if (!opts?.doNotComputeChangeSets) {
+        this.computeChangeSets();
+      }
       this.changeSets.forEach(cs => {
         cs.entity.__helper.__processing = true;
       });
